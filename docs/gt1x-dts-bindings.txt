@@ -1,0 +1,68 @@
+Goodix GT1x-series Touch Driver Bindings
+========================================
+
+Required properties
+-------------------
+
+ - compatible: Should be "goodix,gt1x", compatible with the of_match_table
+		defined in driver.
+ - reg: I2C slave address of the device.
+ - interrupt-parent: Parent of interrupt.
+ - interrupts: Configuration of touch panel controller interrupt GPIO.
+ - vdd_ana-suppy: Power supply needed to power on the device, when use
+		external regulator, do not add this property.
+ - goodix,irq-gpio: Interrupt gpio which is to provide interrupts to 
+		host, same as "interrupts" node.
+ - goodix,reset-gpio: Reset gpio to control the reset of chip.
+ - goodix,default-configx: chip default configuration data, x stands for
+		sensor ID. See example below for reference.
+
+*NOTE*:
+If your kenel does not support output of GPIO tied to IRQ line, you should
+disable CONFIG_GTP_INT_SEL_SYNC before building kernel, also you should add
+pinctrl-names,pinctrl-x to dts to set pull-up state of IRQ-GPIO.
+Please config pull-up to IRQ GPIO using pinctrl default state.
+ - pinctrl-names = "default";
+ - pinctrl-0 = <&goodix_int_pull_up>;
+
+
+
+Optional properties
+-------------------
+ - goodix,charger-configx: chip configuration data used in charger mode, if you
+		hava enabled CONFIG_GTP_CHAGER_SWITCH, you need to add this property.
+		x stands for sendor ID.
+ - goodix,smartcover-configx: chip configuration data used in smartcover mode, if
+		you have enabled CONFIG_GTP_SMARTCOVER, you need to add this property.
+
+Example
+-------
+```
+	i2c@f9927000 { /*Goodix BLSP1 QUP5 */
+		goodix_ts@5d {
+			compatible = "goodix,gt1x";
+			reg = <0x5d>;
+			interrupt-parent = <&msmgpio>;
+			interrupts = <17 0x2008>;
+			vdd_ana-supply = <&pm8226_l19>;
+			goodix,reset-gpio = <&msmgpio 16 0x00>;
+			goodix,irq-gpio = <&msmgpio 17 0x00>;
+			goodix,default-config0 = [
+				5c 00 12 11 10 11 5f 00 cc bb
+				22 00 11 00 00 00 00 00 00 00
+				...
+			];
+			goodix,charger-config2 = [
+				5f 00 12 11 10 11 5f 00 cc bb
+				23 00 11 00 00 00 00 00 00 00
+				...
+			];
+			/* if you have disable CONFIG_GTP_INT_SEL_SYNC,
+			 * please add properties below.
+			 * You should config goodix_int_pull_up node in
+			 * the pinctrl dtsi file */
+			pinctrl-names = "default";
+			pinctrl-0 = <&goodix_int_pull_up>;
+
+};
+```

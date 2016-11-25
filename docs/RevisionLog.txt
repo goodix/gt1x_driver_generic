@@ -1,0 +1,40 @@
+Goodix GT1x series Driver - Android platform
+============================================
+
+Revision Information
+--------------------
+V1.6	2016/11/02
+		- Move macros to Kconfig
+		- Support extended configuration data.
+		- Using request_firmware to obtain chip firmware and hotknot auth-firmwrae.
+		- Add fallback flow to probe function.
+		- Move configuration data to devictreee node.
+		- Using threaded IRQ to do the bottom half work.
+		- Fix issue of coordinates report when using Input typeB protocol.
+
+v1.4	2015/07/10
+		- Free resource of gpio and regulator when module removed.
+		- Add gesture debug command to proc/gt1x_debug
+		- Modify chip reset function to support GT2x
+		- Make wake-up process simplified.
+		- Adjustment for gt1x_init.
+		- Calculate checksum of gesture package.
+		- Fixed bugs in hotknot ioctl function.
+		- Support incell touch ic
+		- Double check firmware update status ret
+		
+v1.2	2015/3/28
+        - Add device tree support.
+        - Add mutex lock for gt1x_send_cfg
+        - Calculate checksum of coordinates package
+        - Add P-sensor module for non-mtk platform
+        - Add Smartcover module
+        - Move suspend/resume functions into gt1x_generic.c
+        - Fixed some bugs
+        - New rules for firmware patch id
+        - Add a thread to run GTP Tools firmware upgrade function.
+        - Add LCD notify callback.
+        - 64bit kernel compatibility
+
+v1.0	2014/11/28
+        - First Release.

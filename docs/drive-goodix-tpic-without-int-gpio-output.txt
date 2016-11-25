@@ -1,0 +1,95 @@
+	Drive Goodix TPIC without INT GPIO Output
+========================================================
+
+1.Background
+------------
+
+Goodix touch IC has a special mechanism that INT GPIO is used for I2C address
+selection and GPIO synchronization during the hardware reset process.
+The reason for designing this mechanism is to prevent i2c address conflict.
+The main flow of this mechanism is as follows:
+
+	reset pin output 0 -> INT pin output 1 if i2c address is 0x14, or output 0 if
+	i2c address is 0x5D -> reset pin output 1 -> delay and wait until  hardware
+	address selection circuit initialization completes. -> INT pin output 0 to inform the
+	firmware that it can safely output INT pulse.
+
+But in kernal3.13 or later versions, the GPIO subsystem has restricted the output
+of GPIO which had been tied to IRQ line. Therefore, the mechanism described above
+is unable to work now.
+
+To solve this problem, we fix the I2C address in the firmware to 0x14, and 
+discard the operation on INT GPIO in our touch driver.
+
+
+2.How-to
+---------
+
+If your kernel has the restriction on the output of GPIO tied to IRQ line, 
+   follow the steps below:
+
+   - Disable CONFIG_GTP_INT_SEL_SYNC in menuconfig.
+
+   - Modify devicetree node: pull up the INT GPIO in pinctrl dts.
+   Note that the pull-up state of INT GPIO is necessary and important. If the
+   firmware in flash is damaged, then the I2C address will be determined by
+   the on-chip address selection circuit; this circuit will select an address based
+   on the level of INT GPIO during the reset process.
+   That’s why we pull up INT GPIO to ensure 0x14 address is always selected
+   to communicate. See below for example:
+   ```
+   i2c@f9927000 { /*Goodix BLSP1 QUP5 */
+	   goodix_ts@14 {
+		   compatible = "goodix,gt1x";
+		   reg = <0x14>;
+		   goodix,reset-gpio = <&msmgpio 16 0x00>;
+		   goodix,irq-gpio = <&msmgpio 17 0x00>;
+		   pinctrl-names = "default";
+		   pinctrl-0 = <&ts_int_pull_up>;
+
+	   };
+
+	   //e.g. in msm8916-pinctrl.dtsi
+	   pmx_ts_int {
+		   qcom,pins = <&gp 13>;
+		   qcom,pin-func = <0>;
+		   qcom,num-grp-pins = <1>;
+		   label = "pmx_ts_int";
+
+		ts_int_pull_up: ts_int_defalut {
+					drive-strength = <16>;
+					bias-pull-up;
+				};
+	    };
+	 ```
+
+	- Edit chip configuration data:
+	   Set IRQ line to be falling-edge triggered
+	   Set INT to be woken up by low level.
+
+	   Note:
+	   Falling-edge is not mandatory for IRQ trigger type. but in consideration
+	   of power saving, falling-edge is recommended.
+	   Ask Goodix FAE to check the configuration data.
+
+	- Use address fixed firmware
+	   Not all the chip firmware  has fixed the I2C address and discard INT
+	   synchronization.
+	   Ask Goodix FAE to provide address fixed firmware.
+
+
+
+3.Driver test
+-------------
+
+- If power consumption in chip sleep mode is larger than expected, check
+INT wakeup-level in chip configuration data.
+For example, if IRQ is set to be falling-edge  triggerred  while INT is
+set to be woken up by  high level, the firmware will never enter sleep mode.
+
+
+
+
+
+
+
